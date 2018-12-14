@@ -1,0 +1,6 @@
+title="WinServiceDemo"
+
+[ServiceConfig]
+name="service demo"
+displayName="demo"
+description="test go service plugin"
