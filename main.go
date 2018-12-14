@@ -10,7 +10,6 @@ import (
 	"winServiceDemo/worker"
 )
 
-
 type program struct{}
 
 func (p *program) Start(s service.Service) error {
@@ -35,7 +34,7 @@ func main() {
 	go_tool.Log("程序启动")
 	defer go_tool.Log("程序退出")
 
-	dir,err := go_tool.GetCurrPath()
+	dir, err := go_tool.GetCurrPath()
 	if err != nil {
 		dir = ""
 	} else {
@@ -43,14 +42,16 @@ func main() {
 	}
 	configPath := dir + "config"
 
-	_,err = toml.DecodeFile(configPath,&sysConfig)
+	_, err = toml.DecodeFile(configPath, &sysConfig)
 	if err != nil {
-		go_tool.Log("加载配置文件失败")
+		msg := "加载配置文件失败"
+		log.Println(msg)
+		go_tool.Log(msg)
 		return
 	}
 
 	svcConfig := &service.Config{
-		Name: sysConfig.ServiceConfig.Name,
+		Name:        sysConfig.ServiceConfig.Name,
 		DisplayName: sysConfig.ServiceConfig.DisplayName,
 		Description: sysConfig.ServiceConfig.Description,
 	}
@@ -62,7 +63,7 @@ func main() {
 	}
 
 	if len(os.Args) > 1 {
-		switch os.Args[1]{
+		switch os.Args[1] {
 		case "install":
 			err = s.Install()
 			msg := ""
@@ -96,6 +97,5 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-
 
 }
