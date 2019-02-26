@@ -1,13 +1,13 @@
 package main
 
 import (
-	"github.com/BurntSushi/toml"
-	"github.com/Deansquirrel/go-tool"
+	"context"
+	log "github.com/Deansquirrel/goToolLog"
+	"github.com/Deansquirrel/goWinServiceDemo/common"
+	"github.com/Deansquirrel/goWinServiceDemo/global"
+	"github.com/Deansquirrel/goWinServiceDemo/worker"
 	"github.com/kardianos/service"
-	"log"
 	"os"
-	"winServiceDemo/global"
-	"winServiceDemo/worker"
 )
 
 type program struct{}
@@ -19,7 +19,7 @@ func (p *program) Start(s service.Service) error {
 
 func (p *program) run() {
 	//服务所执行的代码
-	w := worker.Worker{}
+	w := worker.NewWorker()
 	w.Do()
 }
 
@@ -27,41 +27,36 @@ func (p *program) Stop(s service.Service) error {
 	return nil
 }
 
-var sysConfig global.SysConfig
-
 func main() {
-
-	go_tool.Log("程序启动")
-	defer go_tool.Log("程序退出")
-
-	dir, err := go_tool.GetCurrPath()
+	//==================================================================================================================
+	config, err := common.GetSysConfig("config.toml")
 	if err != nil {
-		dir = ""
-	} else {
-		dir = dir + "\\"
-	}
-	configPath := dir + "config"
-
-	_, err = toml.DecodeFile(configPath, &sysConfig)
-	if err != nil {
-		msg := "加载配置文件失败"
-		log.Println(msg)
-		go_tool.Log(msg)
+		log.Error("加载配置文件时遇到错误：" + err.Error())
 		return
 	}
-
-	svcConfig := &service.Config{
-		Name:        sysConfig.ServiceConfig.Name,
-		DisplayName: sysConfig.ServiceConfig.DisplayName,
-		Description: sysConfig.ServiceConfig.Description,
+	config.FormatConfig()
+	global.SysConfig = config
+	err = common.RefreshSysConfig(*global.SysConfig)
+	if err != nil {
+		log.Error("刷新配置时遇到错误：" + err.Error())
+		return
 	}
-
+	global.Ctx, global.Cancel = context.WithCancel(context.Background())
+	//==================================================================================================================
+	log.Warn("程序启动")
+	defer log.Warn("程序退出")
+	//==================================================================================================================
+	svcConfig := &service.Config{
+		Name:        global.SysConfig.ServiceConfig.Name,
+		DisplayName: global.SysConfig.ServiceConfig.DisplayName,
+		Description: global.SysConfig.ServiceConfig.Description,
+	}
 	prg := &program{}
 	s, err := service.New(prg, svcConfig)
 	if err != nil {
-		log.Fatal(err)
+		log.Error("定义服务配置时遇到错误：" + err.Error())
+		return
 	}
-
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
 		case "install":
@@ -72,8 +67,7 @@ func main() {
 			} else {
 				msg = "服务安装成功"
 			}
-			log.Println(msg)
-			go_tool.Log(msg)
+			log.Warn(msg)
 			return
 		case "uninstall":
 			err = s.Uninstall()
@@ -83,19 +77,17 @@ func main() {
 			} else {
 				msg = "服务卸载成功"
 			}
-			log.Println(msg)
-			go_tool.Log(msg)
+			log.Warn(msg)
 			return
 		default:
-			log.Println("未识别的参数名称\n安装服务:install\n卸载服务:uninstall")
+			log.Error("未识别的参数名称\n安装服务:install\n卸载服务:uninstall")
 			return
 		}
 	} else {
 		err = s.Run()
 		if err != nil {
-			go_tool.Log(err.Error())
-			log.Fatal(err)
+			log.Error(err.Error())
 		}
 	}
-
+	//==================================================================================================================
 }

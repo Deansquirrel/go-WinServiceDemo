@@ -1,4 +1,6 @@
-title="WinServiceDemo"
+[total]
+stdOut=true
+logLevel="debug"
 
 [ServiceConfig]
 name="service demo"

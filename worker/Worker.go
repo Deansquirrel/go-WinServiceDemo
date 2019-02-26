@@ -1,20 +1,21 @@
 package worker
 
 import (
-	"fmt"
-	"github.com/Deansquirrel/go-tool"
+	"github.com/Deansquirrel/goToolCommon"
+	log "github.com/Deansquirrel/goToolLog"
 	"time"
 )
 
-type Worker struct {
-
+type worker struct {
 }
 
-func (p *Worker)Do(){
+func NewWorker() *worker {
+	return &worker{}
+}
+
+func (p *worker) Do() {
 	for {
-		strOut := go_tool.GetDateTimeStr(time.Now()) + " run"
-		go_tool.Log(strOut)
-		fmt.Println(strOut)
-		time.Sleep(time.Second * 1)
+		log.Info(goToolCommon.GetDateTimeStr(time.Now()))
+		time.Sleep(time.Second * 5)
 	}
 }
